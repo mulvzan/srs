@@ -24,9 +24,7 @@ jobs:
 
       - name: Install sing-box (latest linux-amd64)
         run: |
-          TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)
-          FILE="sing-box-${TAG}-linux-amd64.tar.gz"
-          URL="https://github.com/SagerNet/sing-box/releases/download/${TAG}/${FILE}"
+          URL="https://github.com/SagerNet/sing-box/releases/download/v1.12.12/sing-box-1.12.12-linux-amd64.tar.gz"
 
           echo "Downloading sing-box from $URL"
           curl -L "$URL" -o sing-box.tar.gz
