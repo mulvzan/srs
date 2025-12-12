@@ -1,10 +1,9 @@
-name: Build & Push geosite-geolocation-!cn.srs
+name: Update SRS
 
 on:
-  workflow_dispatch:
   schedule:
-    # 日本时间 16:00 → UTC 07:00
     - cron: "0 7 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,47 +13,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
 
-      - name: Download geosite-geolocation-!cn.srs
+      - name: Download original .srs
         run: |
-          curl -L \
-            -o geosite-geolocation-!cn.srs \
+          curl -L -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
 
-      - name: Install sing-box (latest linux-amd64)
+      - name: Install sing-box
         run: |
-          URL="https://github.com/SagerNet/sing-box/releases/download/v1.12.12/sing-box-1.12.12-linux-amd64.tar.gz"
+          curl -L -o singbox.tar.gz \
+            https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
+          tar -xzf singbox.tar.gz
+          mv sing-box-*/sing-box sing-box
+          chmod +x sing-box
 
-          echo "Downloading sing-box from $URL"
-          curl -L "$URL" -o sing-box.tar.gz
-          tar -xzf sing-box.tar.gz
-          sudo mv sing-box*/sing-box /usr/local/bin/sing-box
-          sudo chmod +x /usr/local/bin/sing-box
-
-      - name: Decompile SRS to JSON
+      - name: Decompile to JSON
         run: |
-          sing-box rule-set decompile geosite-geolocation-!cn.srs \
-            -o geosite-geolocation-!cn.json
+          ./sing-box rule-set decompile geosite-geolocation-!cn.srs -o rules.json
 
       - name: Remove domain_regex
         run: |
-          jq 'del(.rules[]?.domain_regex)' geosite-geolocation-!cn.json \
-            > geosite-geolocation-!cn-clean.json
+          jq 'del(.rules[]?.domain_regex)' rules.json > rules_clean.json
 
-      - name: Compile JSON back to SRS
+      - name: Recompile to SRS
         run: |
-          sing-box rule-set compile geosite-geolocation-!cn-clean.json \
-            -o geosite-geolocation-!cn.srs
+          ./sing-box rule-set compile rules_clean.json -o geosite-geolocation-!cn.srs
+
       - name: Commit and Push
-        env:
-          GIT_AUTH_TOKEN: ${{ secrets.PPAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
+
           git add geosite-geolocation-!cn.srs
-      
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
