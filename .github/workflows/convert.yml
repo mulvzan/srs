@@ -1,9 +1,10 @@
-name: Build & Push geolocation-!cn
+name: Build & Push geosite-geolocation-!cn.srs
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7 * * *"   # 日本时间16:00（按你需要可改）
+    # 日本时间 16:00 → UTC 07:00
+    - cron: "0 7 * * *"
 
 jobs:
   build:
@@ -13,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}   # 用于推送
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download geosite-geolocation-!cn.srs
         run: |
@@ -21,14 +22,19 @@ jobs:
             -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
 
-      - name: Install sing-box
+      - name: Install sing-box (latest linux-amd64)
         run: |
-          wget https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.tar.gz
-          tar zxvf sing-box-linux-amd64.tar.gz
+          TAG=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)
+          FILE="sing-box-${TAG}-linux-amd64.tar.gz"
+          URL="https://github.com/SagerNet/sing-box/releases/download/${TAG}/${FILE}"
+
+          echo "Downloading sing-box from $URL"
+          curl -L "$URL" -o sing-box.tar.gz
+          tar -xzf sing-box.tar.gz
           sudo mv sing-box*/sing-box /usr/local/bin/sing-box
           sudo chmod +x /usr/local/bin/sing-box
 
-      - name: Decompile → JSON
+      - name: Decompile SRS to JSON
         run: |
           sing-box rule-set decompile geosite-geolocation-!cn.srs \
             -o geosite-geolocation-!cn.json
@@ -38,12 +44,12 @@ jobs:
           jq 'del(.rules[]?.domain_regex)' geosite-geolocation-!cn.json \
             > geosite-geolocation-!cn-clean.json
 
-      - name: Compile JSON → SRS（覆盖原文件）
+      - name: Compile JSON back to SRS
         run: |
           sing-box rule-set compile geosite-geolocation-!cn-clean.json \
             -o geosite-geolocation-!cn.srs
 
-      - name: Commit & Push updated file
+      - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -51,7 +57,7 @@ jobs:
           git add geosite-geolocation-!cn.srs
 
           if git diff --cached --quiet; then
-            echo "No changes; skip commit."
+            echo "No changes to commit."
           else
             git commit -m "Update geosite-geolocation-!cn.srs (remove domain_regex)"
             git push
