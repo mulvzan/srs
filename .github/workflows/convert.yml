@@ -10,19 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout with PAT so push will succeed
+      # 1. 强制使用 PAT 检出仓库
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
 
-      # 2. Download original .srs
+      # 2. 下载原始 .srs
       - name: Download geosite-geolocation-!cn.srs
         run: |
           curl -L -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
 
-      # 3. Install sing-box v1.12.12
+      # 3. 安装 sing-box v1.12.12
       - name: Install sing-box v1.12.12
         run: |
           curl -L -o singbox.tar.gz \
@@ -31,24 +31,25 @@ jobs:
           mv sing-box-1.12.12-linux-amd64/sing-box sing-box
           chmod +x ./sing-box
 
-      # 4. Decompile .srs → JSON
+      # 4. 反编译为 JSON
       - name: Decompile rule-set
         run: |
           ./sing-box rule-set decompile geosite-geolocation-!cn.srs -o rules.json
 
-      # 5. Remove domain_regex items
-        # domain_regex 是 rules[*].domain_regex[] 
+      # 5. 删除所有 domain_regex 字段
       - name: Remove domain_regex
         run: |
           jq 'del(.rules[]?.domain_regex)' rules.json > rules_clean.json
 
-      # 6. Compile JSON → SRS
+      # 6. 重新编译为 .srs
       - name: Recompile rule-set
         run: |
           ./sing-box rule-set compile rules_clean.json -o geosite-geolocation-!cn.srs
 
       # 7. Commit & Push
       - name: Commit and Push
+        env:
+          PAT: ${{ secrets.PAT }}   # <--- 关键：不能直接在命令里展开 secrets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -57,7 +58,10 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "Update geosite-geolocation-!cn.srs (remove domain_regex)"
-            git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:main
+            exit 0
           fi
+
+          git commit -m "Update geosite-geolocation-!cn.srs (remove domain_regex)"
+
+          # 必须写死仓库名，避免 GitHub 内建 credential 覆盖 PAT
+          git push https://x-access-token:$PAT@github.com/mulvzan/srs.git HEAD:main
