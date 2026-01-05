@@ -20,7 +20,7 @@ jobs:
       - name: Download geosite-geolocation-!cn.srs
         run: |
           curl -L -o geosite-geolocation-!cn.srs \
-            https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-cn.srs
+            https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
 
       # 3. 安装 sing-box v1.12.12
       - name: Install sing-box v1.12.12
@@ -44,7 +44,7 @@ jobs:
       # 6. 重新编译为 .srs
       - name: Recompile rule-set
         run: |
-          ./sing-box rule-set compile rules_clean.json -o geosite-cn.srs
+          ./sing-box rule-set compile rules_clean.json -o geosite-geolocation-!cn.srs
 
       # 7. Commit & Push
       - name: Commit and Push
