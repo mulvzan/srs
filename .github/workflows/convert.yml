@@ -19,7 +19,7 @@ jobs:
       # 2. 下载原始 .srs
       - name: Download geosite-geolocation-!cn.srs
         run: |
-          curl -L -o geosite-cn \
+          curl -L -o geosite-cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-cn.srs
           curl -L -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
