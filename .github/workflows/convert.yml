@@ -21,6 +21,9 @@ jobs:
         run: |
           curl -L -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-cn.srs
+          curl -L -o geosite-geolocation-!cn.srs \
+            https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
+            
 
       # 3. 安装 sing-box v1.12.12
       - name: Install sing-box v1.12.12
@@ -34,17 +37,20 @@ jobs:
       # 4. 反编译为 JSON
       - name: Decompile rule-set
         run: |
-          ./sing-box rule-set decompile geosite-geolocation-!cn.srs -o rules.json
+          ./sing-box rule-set decompile geosite-geolocation-!cn.srs -o !cn.json
+          ./sing-box rule-set decompile geosite-cn.srs -o cn.json
 
       # 5. 删除所有 domain_regex 字段
       - name: Remove domain_regex
         run: |
-          jq 'del(.rules[]?.domain_regex)' rules.json > rules_clean.json
+          jq 'del(.rules[]?.domain_regex)' !cn.json > !cn_clean.json
+          jq 'del(.rules[]?.domain_regex)' cn.json > cn_clean.json
 
       # 6. 重新编译为 .srs
       - name: Recompile rule-set
         run: |
-          ./sing-box rule-set compile rules_clean.json -o geosite-cn.srs
+          ./sing-box rule-set compile cn_clean.json -o geosite-cn.srs
+          ./sing-box rule-set compile !cn_clean.json -o geosite-geolocation-!cn.srs
 
       # 7. Commit & Push
       - name: Commit and Push
