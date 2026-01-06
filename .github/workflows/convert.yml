@@ -2,7 +2,7 @@ name: Update geosite-geolocation-!cn
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # 日本时间 16:00
+    - cron: "0 7 * * *" # 日本时间 16:00
   workflow_dispatch:
 
 jobs:
@@ -19,11 +19,10 @@ jobs:
       # 2. 下载原始 .srs
       - name: Download geosite-geolocation-!cn.srs
         run: |
-          curl -L -o geosite-geolocation-!cn.srs \
+          curl -L -o geosite-cn \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-cn.srs
           curl -L -o geosite-geolocation-!cn.srs \
             https://github.com/SagerNet/sing-geosite/raw/refs/heads/rule-set/geosite-geolocation-!cn.srs
-            
 
       # 3. 安装 sing-box v1.12.12
       - name: Install sing-box v1.12.12
@@ -55,7 +54,7 @@ jobs:
       # 7. Commit & Push
       - name: Commit and Push
         env:
-          PAT: ${{ secrets.PAT }}   # PAT 注入环境变量
+          PAT: ${{ secrets.PAT }} # PAT 注入环境变量
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
