@@ -44,7 +44,7 @@ jobs:
       - name: Remove domain_regex
         run: |
           jq 'del(.rules[]?.domain_regex)' notcn.json > notcn_clean.json
-          jq 'del(.rules[]?.domain_regex)' cn.json > cn_clean.json
+          jq 'del(.rules[]?.domain_regex, .rules[]?.ip_cidr)' notcn.json > cn_clean.json
 
       # 6. 重新编译为 .srs
       - name: Recompile rule-set
